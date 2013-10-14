@@ -7,6 +7,7 @@ Created on Thu Sep 12 09:52:56 2013
 
 from ctypes import *
 from WLMconstants import *
+import time
 
 class WLMError(Exception):
     def __init__(self, message):
@@ -15,8 +16,11 @@ class WLMError(Exception):
 class WavelengthMeter:
     def __init__(self):
         self.dll=windll.wlmData
+        
+        #self.dll.Instantiate(cInstCheckForWLM, 0,0,0)
+        
         # start wlm if not running, using a timeout of 10 seconds and extended return information
-        res = self.dll.ControlWLMEx(cCtrlWLMHide+cCtrlWLMWait, 0, 0, 10, 1)
+        res = self.dll.ControlWLMEx(cCtrlWLMHide+cCtrlWLMStartSilent+cCtrlWLMWait, 0, 0, 10000, 1)
         print hex(res)        
         if res>=flErrUnknownError:
             print 'Unknown Error'
@@ -46,13 +50,33 @@ class WavelengthMeter:
             print 'High Finesse Wavelength Meter started successfully'
             res-=flServerStarted
         else:
-            raise WLMException('Unable to start server')
+            raise WLMError('timeout - unable to start server')
         if res==0:
             return
         else:     
             print 'Unknown Message'
-    
+        
     def getWL(self):
         getWL=self.dll.GetWavelength
         getWL.restype = c_double
-        return getWL(c_double(0))         
+        self.dll.TriggerMeasurement(cCtrlMeasurementContinue)
+        return getWL(c_double(0))
+    def setExpMode(self, autotrue):
+        setMode=self.dll.SetExposureMode
+        setMode(c_bool(autotrue))
+    def showApp(self):
+        self.dll.ControlWLM(cCtrlWLMShow,0,0)
+    def startMeasurement(self):
+        self.dll.Operation(cCtrlStartMeasurement)
+    def stopMeasurement(self):
+        self.dll.Operation(cCtrlStopAll)
+    def setContinuous(self):
+        self.dll.SetPulseMode(0)
+    
+            
+#SUGGESTED SETTINGS:
+#W=WavelengthMeter()
+#W.showApp()
+#W.setExpMode(True)
+#W.setContinuous()
+#W.startMeasurement()
