@@ -61,7 +61,7 @@ class WavelengthMeter:
         getWL.restype = c_double
         self.dll.TriggerMeasurement(cCtrlMeasurementContinue)
         return getWL(c_double(0))
-    def setExpMode(self, autotrue):
+    def setExpMode(self, autotrue=True):
         setMode=self.dll.SetExposureMode
         setMode(c_bool(autotrue))
     def showApp(self):
